@@ -4,8 +4,7 @@ import useCartStore from '../store/cartStore';
 import { Trash2, ArrowLeft, ShoppingBag, Plus, Minus } from 'lucide-react';
 
 const Cart = () => {
-  // ĐÃ SỬA LỖI: Lấy thẳng biến cartItems ra dùng, không gọi hàm
-  const { cartItems, addToCart, removeFromCart, getCartTotal } = useCartStore();
+  const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCartStore();
   const navigate = useNavigate();
 
   // GIAO DIỆN KHI GIỎ HÀNG TRỐNG
@@ -46,67 +45,81 @@ const Cart = () => {
                 </tr>
               </thead>
               <tbody>
-                {cartItems.map((item) => (
-                  <tr key={item.product} className="border-b last:border-b-0 hover:bg-gray-50/50 transition-colors">
-                    <td className="p-5 flex items-center gap-4">
-                      <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl border border-gray-100 shadow-sm" />
-                      <Link to={`/product/${item.product}`} className="font-bold text-gray-800 hover:text-pink-600 text-base line-clamp-2">
-                        {item.name}
-                      </Link>
-                    </td>
-                    <td className="p-5 text-center font-medium text-gray-600">
-                      {item.price.toLocaleString()}đ
-                    </td>
-                    <td className="p-5 text-center">
-                      <div className="flex items-center justify-center border border-gray-200 rounded-full bg-white">
-                        <button onClick={() => addToCart({ _id: item.product }, -1)} disabled={item.quantity <= 1} className="p-2 text-gray-400 hover:text-pink-600 disabled:opacity-50 transition-colors">
-                          <Minus size={16} />
+                {cartItems.map((item) => {
+                  const atMaxStock = item.stock !== undefined && item.quantity >= item.stock;
+                  return (
+                    <tr key={item.product} className="border-b last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                      <td className="p-5 flex items-center gap-4">
+                        <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl border border-gray-100 shadow-sm" />
+                        <div>
+                          <Link to={`/product/${item.product}`} className="font-bold text-gray-800 hover:text-pink-600 text-base line-clamp-2">
+                            {item.name}
+                          </Link>
+                          {atMaxStock && (
+                            <p className="text-xs text-orange-500 font-medium mt-1">Đã đạt số lượng tồn kho tối đa</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-5 text-center font-medium text-gray-600">
+                        {item.price.toLocaleString()}đ
+                      </td>
+                      <td className="p-5 text-center">
+                        <div className="flex items-center justify-center border border-gray-200 rounded-full bg-white">
+                          <button onClick={() => updateQuantity(item.product, item.quantity - 1)} disabled={item.quantity <= 1} className="p-2 text-gray-400 hover:text-pink-600 disabled:opacity-50 transition-colors">
+                            <Minus size={16} />
+                          </button>
+                          <span className="w-8 text-center font-bold text-gray-800">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.product, item.quantity + 1)} disabled={atMaxStock} className="p-2 text-gray-400 hover:text-pink-600 disabled:opacity-30 transition-colors">
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-5 text-right font-black text-pink-600 text-lg">
+                        {(item.price * item.quantity).toLocaleString()}đ
+                      </td>
+                      <td className="p-5 text-center">
+                        <button onClick={() => removeFromCart(item.product)} className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Xóa khỏi giỏ hàng">
+                          <Trash2 size={20} />
                         </button>
-                        <span className="w-8 text-center font-bold text-gray-800">{item.quantity}</span>
-                        <button onClick={() => addToCart({ _id: item.product }, 1)} className="p-2 text-gray-400 hover:text-pink-600 transition-colors">
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="p-5 text-right font-black text-pink-600 text-lg">
-                      {(item.price * item.quantity).toLocaleString()}đ
-                    </td>
-                    <td className="p-5 text-center">
-                      <button onClick={() => removeFromCart(item.product)} className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Xóa khỏi giỏ hàng">
-                        <Trash2 size={20} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* 2. HIỂN THỊ DẠNG THẺ TRÊN ĐIỆN THOẠI (ẨN TRÊN MÁY TÍNH) */}
           <div className="md:hidden space-y-4">
-            {cartItems.map((item) => (
-              <div key={item.product} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 relative">
-                <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-xl border border-gray-100 flex-shrink-0" />
-                <div className="flex-1 flex flex-col justify-between">
-                  <Link to={`/product/${item.product}`} className="font-bold text-gray-800 hover:text-pink-600 text-sm line-clamp-2 pr-6">
-                    {item.name}
-                  </Link>
-                  <p className="text-pink-600 font-black mt-1 text-lg">{item.price.toLocaleString()}đ</p>
-                  
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center border border-gray-200 rounded-full bg-white h-9">
-                      <button onClick={() => addToCart({ _id: item.product }, -1)} disabled={item.quantity <= 1} className="px-3 text-gray-500 disabled:opacity-50"><Minus size={16} /></button>
-                      <span className="w-6 text-center font-bold text-sm text-gray-800">{item.quantity}</span>
-                      <button onClick={() => addToCart({ _id: item.product }, 1)} className="px-3 text-gray-500"><Plus size={16} /></button>
+            {cartItems.map((item) => {
+              const atMaxStock = item.stock !== undefined && item.quantity >= item.stock;
+              return (
+                <div key={item.product} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 relative">
+                  <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-xl border border-gray-100 flex-shrink-0" />
+                  <div className="flex-1 flex flex-col justify-between">
+                    <Link to={`/product/${item.product}`} className="font-bold text-gray-800 hover:text-pink-600 text-sm line-clamp-2 pr-6">
+                      {item.name}
+                    </Link>
+                    <p className="text-pink-600 font-black mt-1 text-lg">{item.price.toLocaleString()}đ</p>
+                    {atMaxStock && (
+                      <p className="text-xs text-orange-500 font-medium">Đã đạt số lượng tồn kho tối đa</p>
+                    )}
+
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center border border-gray-200 rounded-full bg-white h-9">
+                        <button onClick={() => updateQuantity(item.product, item.quantity - 1)} disabled={item.quantity <= 1} className="px-3 text-gray-500 disabled:opacity-50"><Minus size={16} /></button>
+                        <span className="w-6 text-center font-bold text-sm text-gray-800">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.product, item.quantity + 1)} disabled={atMaxStock} className="px-3 text-gray-500 disabled:opacity-30"><Plus size={16} /></button>
+                      </div>
                     </div>
                   </div>
+                  {/* Nút xóa góc phải */}
+                  <button onClick={() => removeFromCart(item.product)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 p-1 bg-white rounded-full">
+                    <Trash2 size={20} />
+                  </button>
                 </div>
-                {/* Nút xóa góc phải */}
-                <button onClick={() => removeFromCart(item.product)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 p-1 bg-white rounded-full">
-                  <Trash2 size={20} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* NÚT QUAY LẠI MUA SẮM */}

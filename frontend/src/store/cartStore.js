@@ -19,24 +19,30 @@ const useCartStore = create(
         };
       }),
 
-      // Thêm sản phẩm vào giỏ
+      // Thêm sản phẩm vào giỏ (giới hạn không vượt quá tồn kho)
       addToCart: (product, quantity = 1) => set((state) => {
         const id = state.activeCartId;
         const currentItems = state.cartItems;
-        // Kiểm tra xem sản phẩm đã có trong giỏ chưa (hỗ trợ cả 2 chuẩn dữ liệu _id và product)
         const productId = product._id || product.product;
         const existingItem = currentItems.find((item) => item.product === productId);
 
+        // Tồn kho: ưu tiên lấy từ product mới nhất, nếu không có thì giữ giá trị cũ đã lưu
+        const stockLimit = product.stock !== undefined
+          ? product.stock
+          : (existingItem?.stock ?? Infinity);
+
         let newItems;
         if (existingItem) {
-          // Nếu đã có, chỉ cộng dồn số lượng
+          const desiredQty = existingItem.quantity + quantity;
+          // Không cho thấp hơn 1 và không cho vượt quá tồn kho
+          const cappedQty = Math.min(Math.max(1, desiredQty), stockLimit);
           newItems = currentItems.map((item) =>
             item.product === productId
-              ? { ...item, quantity: Math.max(1, item.quantity + quantity) } // Đảm bảo số lượng luôn >= 1
+              ? { ...item, quantity: cappedQty, stock: stockLimit }
               : item
           );
         } else {
-          // Nếu chưa có, thêm sản phẩm mới hoàn toàn
+          const cappedQty = Math.min(quantity > 0 ? quantity : 1, stockLimit);
           newItems = [
             ...currentItems,
             {
@@ -44,15 +50,30 @@ const useCartStore = create(
               name: product.name,
               price: product.flashSale?.isFlashSale ? product.flashSale.salePrice : (product.basePrice || product.price),
               image: product.images ? product.images[0] : product.image,
-              quantity: quantity > 0 ? quantity : 1,
+              quantity: cappedQty,
+              stock: stockLimit, // Lưu lại tồn kho tại thời điểm thêm vào giỏ
             },
           ];
         }
-        
-        // Lưu lại vào cả mảng hiển thị và kho lưu trữ chung
-        return { 
-            cartItems: newItems,
-            carts: { ...state.carts, [id]: newItems } 
+
+        return {
+          cartItems: newItems,
+          carts: { ...state.carts, [id]: newItems }
+        };
+      }),
+
+      // Đặt thẳng số lượng mới (dùng cho nút +/- trong trang Giỏ hàng)
+      updateQuantity: (productId, newQuantity) => set((state) => {
+        const id = state.activeCartId;
+        const newItems = state.cartItems.map((item) => {
+          if (item.product !== productId) return item;
+          const stockLimit = item.stock ?? Infinity;
+          const safeQty = Math.min(Math.max(1, newQuantity), stockLimit);
+          return { ...item, quantity: safeQty };
+        });
+        return {
+          cartItems: newItems,
+          carts: { ...state.carts, [id]: newItems }
         };
       }),
 

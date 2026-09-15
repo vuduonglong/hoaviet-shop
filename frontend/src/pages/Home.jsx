@@ -47,66 +47,81 @@ const Home = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products?.slice(0, 8).map((product) => (
-            <div key={product._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group">
-              <Link to={`/product/${product._id}`} className="relative h-64 block overflow-hidden bg-gray-100">
-                
-                {/* ĐÃ NÂNG CẤP: Gắn sự kiện onError tự động bắt lỗi ảnh hỏng */}
-                <img 
-                  src={product.images[0] || 'https://placehold.co/600x600/fdf2f8/ec4899?text=HoaViet'} 
-                  alt={product.name} 
-                  onError={(e) => {
-                    e.target.onerror = null; 
-                    e.target.src = 'https://placehold.co/600x600/fdf2f8/ec4899?text=HoaViet';
-                  }}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
+          {products?.slice(0, 8).map((product) => {
+            const outOfStock = !product.isAvailable || product.stock === 0;
 
-                {product.flashSale?.isFlashSale && (
-                  <span className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                    SALE
-                  </span>
-                )}
-              </Link>
+            return (
+              <div key={product._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group">
+                <Link to={`/product/${product._id}`} className="relative h-64 block overflow-hidden bg-gray-100">
 
-              <div className="p-5 flex flex-col flex-grow">
-                <Link to={`/product/${product._id}`}>
-                  <h3 className="text-lg font-bold text-gray-800 line-clamp-1 hover:text-pink-600 transition-colors">
-                    {product.name}
-                  </h3>
+                  <img
+                    src={product.images[0] || 'https://placehold.co/600x600/fdf2f8/ec4899?text=HoaViet'}
+                    alt={product.name}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://placehold.co/600x600/fdf2f8/ec4899?text=HoaViet';
+                    }}
+                    className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${outOfStock ? 'grayscale opacity-70' : ''}`}
+                  />
+
+                  {/* Nhãn Hết hàng ưu tiên hiển thị trước nhãn SALE */}
+                  {outOfStock ? (
+                    <span className="absolute top-3 right-3 bg-gray-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                      Hết hàng
+                    </span>
+                  ) : product.flashSale?.isFlashSale && (
+                    <span className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                      SALE
+                    </span>
+                  )}
                 </Link>
-                <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-50">
-                  <div>
-                    {product.flashSale?.isFlashSale ? (
-                      <div className="flex flex-col">
-                        <span className="text-red-600 font-extrabold text-lg">
-                          {product.flashSale.salePrice.toLocaleString()}đ
-                        </span>
-                        <span className="text-gray-400 line-through text-xs">
+
+                <div className="p-5 flex flex-col flex-grow">
+                  <Link to={`/product/${product._id}`}>
+                    <h3 className="text-lg font-bold text-gray-800 line-clamp-1 hover:text-pink-600 transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-50">
+                    <div>
+                      {product.flashSale?.isFlashSale ? (
+                        <div className="flex flex-col">
+                          <span className="text-red-600 font-extrabold text-lg">
+                            {product.flashSale.salePrice.toLocaleString()}đ
+                          </span>
+                          <span className="text-gray-400 line-through text-xs">
+                            {product.basePrice.toLocaleString()}đ
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-pink-600 font-extrabold text-lg">
                           {product.basePrice.toLocaleString()}đ
                         </span>
-                      </div>
-                    ) : (
-                      <span className="text-pink-600 font-extrabold text-lg">
-                        {product.basePrice.toLocaleString()}đ
-                      </span>
-                    )}
+                      )}
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (outOfStock) return;
+                        addToCart(product, 1);
+                        alert('Đã thêm thành công!');
+                      }}
+                      disabled={outOfStock}
+                      title={outOfStock ? 'Sản phẩm tạm hết hàng' : 'Thêm vào giỏ hàng'}
+                      className={`p-2.5 rounded-full transition-all transform ${
+                        outOfStock
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-pink-50 text-pink-600 hover:bg-pink-500 hover:text-white hover:scale-110'
+                      }`}
+                    >
+                      <ShoppingCart size={20} />
+                    </button>
                   </div>
-                  
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault(); 
-                      addToCart(product, 1);
-                      alert('Đã thêm thành công!');
-                    }}
-                    className="bg-pink-50 p-2.5 rounded-full text-pink-600 hover:bg-pink-500 hover:text-white transition-all transform hover:scale-110"
-                  >
-                    <ShoppingCart size={20} />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
