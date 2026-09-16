@@ -2,7 +2,7 @@
   "dependencies": {
     "cloudinary": "^1.41.3",
     "googleapis": "^176.0.0",
-    "multer": "^2.2.0",
+    "multer": "^2.4.0",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^9.0.5",
     "qrcode": "^1.5.4"
@@ -15,8 +15,8 @@
     "concurrently": "^10.0.5"
   },
   "scripts": {
-  "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
-},
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
